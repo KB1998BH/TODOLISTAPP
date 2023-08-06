@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Todo App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .todo-list {
+            margin-top: 20px;
+            padding: 10px;
+        }
+        .todo-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        .done-button {
+            background-color: #2ecc71;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .delete-button {
+            background-color: #e74c3c;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Todo App</h1>
+        <div class="todo-form">
+            <label for="todo-name">Todo Name:</label>
+            <input type="text" id="todo-name" />
+            <label for="todo-description">Todo Description:</label>
+            <input type="text" id="todo-description" />
+            <button onclick="addTodo()">Add Todo</button>
+        </div>
+        <div class="todo-list">
+            <h2>Todo Remaining</h2>
+            <ul id="todo-remaining"></ul>
+            <h2>Todo Done</h2>
+            <ul id="todo-done"></ul>
+        </div>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+    <script>
+
+          // Fetch todo items from the API and populate the lists
+          axios.get("https://crudcrud.com/api/62d2b9f72dc846939851fae1c042901a/appoinmentData")
+            .then((response) => {
+                var todoData = response.data;
+                todoData.forEach((todoItem) => {
+                    addTodoToView(todoItem);
+                });
+            })
+            .catch((err) => {
+                console.log(err);
+            });
+
+        function addTodo() {
+            var todoName = document.getElementById("todo-name").value;
+            var todoDescription = document.getElementById("todo-description").value;
+            var todoItem = {
+                name: todoName,
+                description: todoDescription
+            };
+
+             ///--uses axios post api call for  use in crudcrud.com api
+            axios.post("https://crudcrud.com/api/62d2b9f72dc846939851fae1c042901a/appoinmentData", todoItem)
+            .then((response) => {
+            
+            console.log(response.data)
+            })
+            .catch((err) => {
+            //document.body.innerHTML = document.body.innerHTML + "<h4> Something went wrong </h4>"
+            console.log(err)
+            })
+
+            if (todoName.trim() === "" || todoDescription.trim() === "") {
+                alert("Please enter a valid Todo Name and Description.");
+                return;
+            }
+
+            var todoRemainingList = document.getElementById("todo-remaining");
+            var todoItemElement = document.createElement("li");
+            todoItemElement.textContent = `${todoName}: ${todoDescription}`;
+            //done button
+            var doneButton = document.createElement("button");
+            doneButton.textContent = "Done";
+            doneButton.className = "done-button";
+            doneButton.onclick = function() {
+                moveTodoToDone(todoItemElement);
+            };
+            //delete button
+            var deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.className = "delete-button";
+            deleteButton.onclick = function() {
+                removeTodoItem(todoItemElement);
+            };
+            todoItemElement.appendChild(doneButton);
+            todoItemElement.appendChild(deleteButton);
+            todoRemainingList.appendChild(todoItemElement);
+        }
+
+
+
+        // Extract this function to add a todo item to the view
+        function addTodoToView(todoItem) {
+            var todoRemainingList = document.getElementById("todo-remaining");
+            var todoDoneList = document.getElementById("todo-done");
+            var todoItemElement = document.createElement("li");
+            todoItemElement.textContent = `${todoItem.name}: ${todoItem.description}`;
+
+            //donebutton
+            var doneButton = document.createElement("button");
+            doneButton.textContent = "Done";
+            doneButton.className = "done-button";
+            doneButton.onclick = function() {
+                moveTodoToDone(todoItemElement);
+            };
+
+            //deletebutton
+            var deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.className = "delete-button";
+            deleteButton.onclick = function() {
+                removeTodoItem(todoItemElement);
+            };
+
+
+            todoItemElement.appendChild(doneButton);
+            todoItemElement.appendChild(deleteButton);
+
+            if (todoItem.done) {
+                todoDoneList.appendChild(todoItemElement);
+            } else {
+                todoRemainingList.appendChild(todoItemElement);
+            }
+            // Add the todo item's unique identifier to the element's dataset
+            todoItemElement.dataset.id = todoItem._id;
+        }
+
+
+        //Movetodo fron todoremaining to tododone
+        function moveTodoToDone(todoItemElement) {
+            var todoDoneList = document.getElementById("todo-done");
+            todoDoneList.appendChild(todoItemElement);
+            var doneButton = todoItemElement.querySelector(".done-button");
+            doneButton.remove();
+        }
+        
+
+        //delete from postman and user screen
+        function removeTodoItem(todoItemElement) {
+            var todoId = todoItemElement.dataset.id; // Get the unique identifier from the dataset
+            axios.delete(`https://crudcrud.com/api/62d2b9f72dc846939851fae1c042901a/appoinmentData/${todoId}`)
+              .then(() => {
+                    todoItemElement.remove(); // Remove the todo from the view
+              })
+             .catch((err) => {
+                    console.log(err);
+            });
+        }
+
+    </script>
+</body>
+</html>
